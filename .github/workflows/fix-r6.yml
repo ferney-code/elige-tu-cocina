@@ -1,0 +1,20 @@
+name: fix-r6
+on:
+  push:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for p in 1-index.html:index.html 2-app.css:app.css 3-app.js:app.js; do
+            a=${p%%:*}; b=${p##*:}
+            if [ -f "$a" ]; then mv -f "$a" "$b"; fi
+          done
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "r6: fix upload prefixes" || exit 0
+          git push
