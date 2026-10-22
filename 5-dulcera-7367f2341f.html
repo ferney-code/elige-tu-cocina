@@ -34,7 +34,9 @@ canvas{display:block;touch-action:none;}
   z-index:100;font-family:Monospace;font-size:10px;opacity:0.75;max-width:min(92vw,560px);
 }
 #lic summary{cursor:pointer;}
-#lic pre{white-space:pre-wrap;word-break:break-word;font-size:9px;max-height:30vh;overflow:auto;background:rgba(0,0,0,0.55);padding:8px;border-radius:6px;}
+#lic .licbody{background:rgba(0,0,0,0.55);padding:8px;border-radius:6px;max-height:30vh;overflow:auto;}
+#lic .licbody p{margin:4px 0;}
+#lic pre{white-space:pre-wrap;word-break:break-word;font-size:9px;margin:4px 0;}
 #lic a{color:#ff0;text-decoration:none;}
 [hidden]{display:none!important;}
 </style>
@@ -80,15 +82,11 @@ window.addEventListener('unhandledrejection',function(ev){
 <div id="err" hidden><p></p><pre id="diag"></pre></div>
 <details id="lic">
   <summary>Licencias</summary>
-  <pre>Modelo "Iridescent Dish With Olives" (c) 2020 Wayfair LLC, autor: Eric Chadwick.
-Licencia Creative Commons Atribucion 4.0 Internacional (CC BY 4.0):
-https://creativecommons.org/licenses/by/4.0/
-
-Imagen de ambiente "Royal Esplanade": Poly Haven, CC0 (dominio publico):
-https://creativecommons.org/publicdomain/zero/1.0/
-
-three.js r186 - Licencia MIT (texto completo):
-Copyright (c) 2010-2026 three.js authors
+  <div class="licbody">
+    <p>Modelo "Iridescent Dish With Olives", autor: Eric Chadwick. Copyright 2021 Wayfair LLC. Licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0 International</a>.</p>
+    <p>Imagen de ambiente "Royal Esplanade": Poly Haven, <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 (dominio publico)</a>.</p>
+    <p>three.js r186 - Licencia MIT (texto completo):</p>
+    <pre>Copyright (c) 2010-2026 three.js authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -107,6 +105,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.</pre>
+  </div>
 </details>
 
 <script type="text/plain" id="m-core">/**
