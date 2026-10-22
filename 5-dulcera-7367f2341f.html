@@ -59,8 +59,25 @@ window.showError=function(m){
       var g=g2||c.getContext('webgl'); gl1=!!g;
       if(g)maxTex=g.getParameter(g.MAX_TEXTURE_SIZE);
     }catch(x){}
-    d.textContent='Etapa: '+window.__stage+'\nWebGL2: '+gl2+' | WebGL1: '+gl1+' | Textura max: '+maxTex+'\n'+navigator.userAgent;
+    d.textContent='Etapa: '+window.__stage+'\nWebGL2: '+gl2+' | WebGL1: '+gl1+' | Textura max: '+maxTex+'\n'+navigator.userAgent+'\nTiempos parciales:\n'+(window.__fmtMarks?window.__fmtMarks():'');
   }
+};
+window.__fmtMarks=function(){
+  var m=window.__marks||{};
+  var nav=null; try{nav=performance.getEntriesByType('navigation')[0]||null;}catch(x){}
+  function seg(a,b){return (typeof m[a]==='number'&&typeof m[b]==='number')?(m[b]-m[a])+' ms':'\u2026';}
+  function abs(k){return (typeof m[k]==='number')?m[k]+' ms':'\u2026';}
+  var khr='?'; try{var c=document.querySelector('canvas');var g=c&&(c.getContext('webgl2')||c.getContext('webgl'));khr=g?!!g.getExtension('KHR_parallel_shader_compile'):'?';}catch(x){}
+  return [
+    'documento hasta responseEnd: '+(nav?Math.round(nav.responseEnd-nav.startTime)+' ms':'\u2026')+' (servidor+cache)',
+    'responseEnd a DCL: '+(nav&&typeof m['dcl']==='number'?(m['dcl']-Math.round(nav.responseEnd))+' ms':'\u2026')+' (intervalo hasta DCL, no parse aislado)',
+    'DCL a arranque (base64+libreria): '+seg('dcl','arranque'),
+    'parse+decodificacion modelo/ambiente (sin red): '+seg('arranque','modelo listo'),
+    'espera compuerta: '+seg('gate ini','gate fin'),
+    'primer render cpu aprox (incluye compilacion; no confirma presentacion): '+seg('render1 ini','render1 fin'),
+    'total desde navegacion: '+abs('primer cuadro con modelo'),
+    'KHR_parallel: '+(khr===true?'si':khr===false?'no':'?')
+  ].join('\n');
 };
 window.addEventListener('error',function(ev){
   var m=(ev&&ev.message)||'';
@@ -204,10 +221,13 @@ function init() {
 			( window.__marks = window.__marks || {} )[ 'modelo listo' ] = Math.round( performance.now() );
 			setStage( 'preparando primer cuadro (puede tardar unos segundos)' );
 			// deja pintar el aviso antes del bloqueo sincronico de compilacion
+			( window.__marks = window.__marks || {} )[ 'gate ini' ] = Math.round( performance.now() );
 			requestAnimationFrame( function () {
 
+				( window.__marks = window.__marks || {} )[ 'gate1' ] = Math.round( performance.now() );
 				requestAnimationFrame( function () {
 
+					( window.__marks = window.__marks || {} )[ 'gate fin' ] = Math.round( performance.now() );
 					if ( pendingScene ) scene.add( pendingScene );
 					modelReady = true;
 					fitCamera();
@@ -393,7 +413,9 @@ function animate( time ) {
 
 	controls.update();
 
+	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 ini' ] = Math.round( performance.now() );
 	renderer.render( scene, camera );
+	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 fin' ] = Math.round( performance.now() );
 
 	// resolucion adaptativa: intervalos reales entre cuadros (rAF).
 	// El segundo plano se excluye con visibilitychange, no con corte numerico,
@@ -440,6 +462,14 @@ function animate( time ) {
 		clearTimeout( loadTimeout );
 		setStage( 'primer cuadro con modelo' );
 		hideLoading();
+		// SONDA v3: marcas pasivas sobre la version servida; no cambia la carga
+		try {
+			const d = document.createElement( 'div' );
+			d.id = 'sonda';
+			d.textContent = ( window.__fmtMarks ? window.__fmtMarks() : '' ).split( '\n' ).join( '  |  ' );
+			d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:250;background:rgba(0,0,0,.85);color:#9f9;font:12px/1.5 monospace;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));text-align:center;white-space:normal';
+			document.body.appendChild( d );
+		} catch ( e ) {}
 
 	}
 
