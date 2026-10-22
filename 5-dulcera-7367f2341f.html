@@ -75,6 +75,11 @@ window.__fmtMarks=function(){
     'parse+decodificacion modelo/ambiente (sin red): '+seg('arranque','modelo listo'),
     'espera compuerta: '+seg('gate ini','gate fin'),
     'primer render cpu aprox (incluye compilacion; no confirma presentacion): '+seg('render1 ini','render1 fin'),
+    'deltas mixer 1..12 (ms; intervalo entre callbacks, no presentacion): '+((window.__mixDeltas||[]).join(',')||'\u2026')+' | total updates: '+(window.__mixDeltasN||0)+' | max: '+(window.__mixDeltasMax||0),
+    'clip t tras updates 1..12 (ms): '+((window.__mixTimes||[]).join(',')||'\u2026'),
+    'huecos rAF>500ms: n='+(window.__gapsN||0)+' max='+(window.__gapsMax||0)+' primeros: '+((window.__gaps||[]).join(' ')||'ninguno'),
+    'pasos pixelRatio (valor@t): '+((window.__prSteps||[]).join(' ')||'ninguno'),
+    'ventanas45 rAF (avg/max ms): '+((window.__win45||[]).join(' ')||'\u2026'),
     'total desde navegacion: '+abs('primer cuadro con modelo'),
     'KHR_parallel: '+(khr===true?'si':khr===false?'no':'?')
   ].join('\n');
@@ -409,7 +414,7 @@ function animate( time ) {
 
 	timer.update();
 
-	if ( mixer ) { if ( __FREEZE__ ) { mixer.setTime(0); } else { mixer.update( timer.getDelta() ); } }
+	if ( mixer ) { if ( __FREEZE__ ) { mixer.setTime(0); } else { const __d = timer.getDelta(); if ( ( window.__mixDeltas = window.__mixDeltas || [] ).length < 12 ) { window.__mixDeltas.push( Math.round( __d * 1000 ) ); ( window.__mixTimes = window.__mixTimes || [] ).push( Math.round( mixer.time * 1000 ) ); } window.__mixDeltasMax = Math.max( window.__mixDeltasMax || 0, Math.round( __d * 1000 ) ); window.__mixDeltasN = ( window.__mixDeltasN || 0 ) + 1; mixer.update( __d ); } }
 
 	controls.update();
 
@@ -433,13 +438,22 @@ function animate( time ) {
 			if ( dt > 0 && dt < 10000 ) {
 
 				frameTimes.push( dt );
+				if ( dt > 500 ) {
+
+					window.__gapsN = ( window.__gapsN || 0 ) + 1;
+					window.__gapsMax = Math.max( window.__gapsMax || 0, Math.round( dt ) );
+					if ( ( window.__gaps = window.__gaps || [] ).length < 8 ) window.__gaps.push( Math.round( dt ) + '@' + Math.round( time ) );
+
+				}
 				if ( frameTimes.length > 45 ) frameTimes.shift();
 				if ( frameTimes.length === 45 ) {
 
 					const avg = frameTimes.reduce( function ( a, b ) { return a + b; }, 0 ) / 45;
+					if ( ( window.__win45 = window.__win45 || [] ).length < 3 ) window.__win45.push( 'avg' + Math.round( avg ) + '/max' + Math.round( Math.max.apply( null, frameTimes ) ) );
 					if ( avg > 27 && pixelRatio > 1 ) {
 
 						pixelRatio = Math.max( 1, pixelRatio - 0.25 );
+						( window.__prSteps = window.__prSteps || [] ).push( pixelRatio + '@' + Math.round( performance.now() ) );
 						renderer.setPixelRatio( pixelRatio );
 						renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -466,7 +480,9 @@ function animate( time ) {
 		try {
 			const d = document.createElement( 'div' );
 			d.id = 'sonda';
-			d.textContent = ( window.__fmtMarks ? window.__fmtMarks() : '' ).split( '\n' ).join( '  |  ' );
+			const __upd = function () { d.textContent = ( window.__fmtMarks ? window.__fmtMarks() : '' ).split( '\n' ).join( '  |  ' ); };
+			__upd();
+			setInterval( __upd, 2000 );
 			d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:250;background:rgba(0,0,0,.85);color:#9f9;font:12px/1.5 monospace;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));text-align:center;white-space:normal';
 			document.body.appendChild( d );
 		} catch ( e ) {}
