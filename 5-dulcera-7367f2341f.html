@@ -38,6 +38,8 @@ canvas{display:block;touch-action:none;}
 #lic .licbody p{margin:4px 0;}
 #lic pre{white-space:pre-wrap;word-break:break-word;font-size:9px;margin:4px 0;}
 #lic a{color:#ff0;text-decoration:none;}
+#info,#sonda{cursor:pointer;}
+#togglebtn{position:fixed;top:8px;right:8px;z-index:260;background:rgba(0,0,0,0.5);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:50%;width:30px;height:30px;font:14px/1 monospace;padding:0;display:none;}
 [hidden]{display:none!important;}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -92,6 +94,16 @@ window.addEventListener('error',function(ev){
 window.addEventListener('unhandledrejection',function(ev){
   var r=ev&&ev.reason;
   window.showError('Error: '+((r&&r.message)||r||'desconocido'));
+});
+window.__hideBanner=function(el){el.style.display='none';var b=document.getElementById('togglebtn');if(b)b.style.display='block';};
+window.__showBanners=function(){var i=document.getElementById('info'),s=document.getElementById('sonda');if(i)i.style.display='';if(s)s.style.display='';var b=document.getElementById('togglebtn');if(b)b.style.display='none';};
+window.addEventListener('DOMContentLoaded',function(){
+  var b=document.createElement('button');
+  b.id='togglebtn';b.type='button';b.textContent='\u24d8';b.setAttribute('aria-label','Mostrar info y telemetria');
+  b.addEventListener('click',function(){window.__showBanners();});
+  document.body.appendChild(b);
+  var i=document.getElementById('info');
+  if(i)i.addEventListener('click',function(ev){ev.preventDefault();window.__hideBanner(i);});
 });
 </script>
 </head>
@@ -493,6 +505,7 @@ function animate( time ) {
 			setInterval( __upd, 2000 );
 			d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:250;background:rgba(0,0,0,.85);color:#9f9;font:12px/1.5 monospace;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));text-align:center;white-space:normal';
 			document.body.appendChild( d );
+			d.addEventListener( 'click', function () { window.__hideBanner( d ); } );
 		} catch ( e ) {}
 
 	}
