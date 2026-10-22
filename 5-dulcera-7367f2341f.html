@@ -160,6 +160,7 @@ let pixelRatio = Math.min( window.devicePixelRatio || 1, 2 );
 let frameTimes = [];
 let lastFrameT = -1;
 let samplingPaused = false;
+let resizePending = false;
 let loadTimeout = 0;
 let modelReady = false;
 let firstRenderWithModel = false;
@@ -401,12 +402,7 @@ function fitCamera() {
 
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-
-	renderer.setSize( window.innerWidth, window.innerHeight );
-
-	fitCamera();
+	resizePending = true;
 
 }
 
@@ -418,9 +414,16 @@ function animate( time ) {
 
 	controls.update();
 
-	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 ini' ] = Math.round( performance.now() );
-	renderer.render( scene, camera );
-	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 fin' ] = Math.round( performance.now() );
+	// aplicar cambios de tamano SIEMPRE seguidos de render en el mismo frame (evita presentar buffer limpio en negro)
+	if ( resizePending ) {
+
+		resizePending = false;
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		fitCamera();
+
+	}
 
 	// resolucion adaptativa: intervalos reales entre cuadros (rAF).
 	// El segundo plano se excluye con visibilitychange, no con corte numerico,
@@ -468,6 +471,11 @@ function animate( time ) {
 		lastFrameT = samplingPaused ? -1 : time;
 
 	}
+
+	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 ini' ] = Math.round( performance.now() );
+	renderer.render( scene, camera );
+	if ( modelReady && ! firstRenderWithModel ) ( window.__marks = window.__marks || {} )[ 'render1 fin' ] = Math.round( performance.now() );
+
 
 	// la pantalla de carga solo se quita cuando el MODELO ya se renderizo al menos una vez
 	if ( modelReady && ! firstRenderWithModel ) {
